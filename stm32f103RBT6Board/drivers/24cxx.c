@@ -24,34 +24,31 @@ u8 AT24CXX_ReadOneByte(u16 ReadAddr)
 	msgs.len   = 1;	
 	rt_i2c_transfer(i2c_bus, &msgs, 1);
 	
-	
-	msgs.flags = RT_I2C_RD; /* Read from slave */
+	msgs.addr = i2c_addr;
+	msgs.flags = RT_I2C_RD; /* Read from slave */	
+	msgs.len   = 1;	
 	msgs.buf   = &temp;	
 
 	rt_i2c_transfer(i2c_bus, &msgs, 1);
 	return temp;	
-
-	return temp;
+	
 }
 //在AT24CXX指定地址写入一个数据
 //WriteAddr  :写入数据的目的地址    
 //DataToWrite:要写入的数据
 void AT24CXX_WriteOneByte(u16 WriteAddr,u8 DataToWrite)
 {				
-	u8 address;	
+	u8 data[2];	
 	struct rt_i2c_msg msgs;
 	
-	address = WriteAddr;
-
+	data[0] = WriteAddr;
+	data[1] = DataToWrite;
+	
 	msgs.addr = i2c_addr;
 	msgs.flags = RT_I2C_WR;
-	msgs.buf   = &address;
-	msgs.len   = 1;
-	rt_i2c_transfer(i2c_bus, &msgs, 1);	
-		
-	msgs.buf   = &DataToWrite;	
-	rt_i2c_transfer(i2c_bus, &msgs, 1);	
-
+	msgs.buf   = &data[0];
+	msgs.len   = 2;
+	rt_i2c_transfer(i2c_bus, &msgs, 1);		
 }
 //在AT24CXX里面的指定地址开始写入长度为Len的数据
 //该函数用于写入16bit或者32bit的数据.
@@ -91,16 +88,16 @@ u32 AT24CXX_ReadLenByte(u16 ReadAddr,u8 Len)
 u8 AT24CXX_Check(void)
 {
 	u8 temp;
-	temp=AT24CXX_ReadOneByte(0xC0);//避免每次开机都写AT24CXX			   
-	if(temp==0X55)return 0;		   
+	temp=AT24CXX_ReadOneByte(0xCC);//避免每次开机都写AT24CXX			   
+	if(temp==0XAC)return 0;		   
 	
 	else//排除第一次初始化的情况
 	{
-		AT24CXX_WriteOneByte(0xC0,0X55);
+		AT24CXX_WriteOneByte(0xCC,0XAC);
+		rt_thread_delay(1);
+	  temp=AT24CXX_ReadOneByte(0xCC);	  
 		
-	  temp=AT24CXX_ReadOneByte(0xC0);	  
-		
-		if(temp==0X55)return 0;
+		if(temp==0XAC)return 0;
 	}
 	return 1;											  
 }
